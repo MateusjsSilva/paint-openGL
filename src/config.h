@@ -18,7 +18,7 @@
 	#include <GL/glu.h>
 #endif
 
- // Include other libraries
+// Include other libraries
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -33,3 +33,5 @@
 #ifndef ESC
 	#define ESC 27 
 #endif
+
+using namespace std;

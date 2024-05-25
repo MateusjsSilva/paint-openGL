@@ -7,7 +7,6 @@
 
 #pragma once
 
-
 #ifndef glut_text_h
 
     #define glut_text_h

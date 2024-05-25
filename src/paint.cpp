@@ -7,69 +7,71 @@
 
 #include "config.h"
 #include "glut_text.h"
+#include "utils/data_structures.h"
+#include "utils/algorithms.h"
+#include "utils/graphical_user_interface.h"
+// #include "utils/shapes.h"
 
-using namespace std;
 
-// Enumeracao com os tipos de formas geometricas
-enum tipo_forma { LIN = 1, TRI, RET, POL, CIR }; // Linha, Triangulo, Retangulo Poligono, Circulo
 
-// Verifica se foi realizado o primeiro clique do mouse
-bool click1 = false;
-
-// Coordenadas da posicao atual do mouse
-int m_x, m_y;
-
-// Coordenadas do primeiro clique e do segundo clique do mouse
-int x_1, y_1, x_2, y_2;
-
-// Indica o tipo de forma geometrica ativa para desenhar
-int modo = LIN;
-
-// Largura e altura da janela
-int width = 512, height = 512;
-
-// Definicao de vertice
-struct vertice {
-    int x;
-    int y;
-};
-
-// Definicao das formas geometricas
-struct forma {
-    int tipo;
-    forward_list<vertice> v; // lista encadeada de vertices
-};
-
-// Lista encadeada de formas geometricas
-forward_list<forma> formas;
-
-// Funcao para armazenar uma forma geometrica na lista de formas
-// Armazena sempre no inicio da lista
-void pushForma(int tipo) {
-    forma f;
-    f.tipo = tipo;
-    formas.push_front(f);
+// Function to store a geometric shape in the list of shapes
+void pushShape(int type, bool front = true) 
+{
+    shapes newShape {
+        newShape.type = type,
+        newShape.red = redColor,
+        newShape.green = greenColor,
+        newShape.blue = blueColor
+    };
+   
+    if (front) {
+        ListShapes.push_front(newShape);
+    }
+    else
+    {
+        ListShapes.reverse();
+        ListShapes.push_front(newShape);
+        ListShapes.reverse();
+    }
 }
 
-// Funcao para armazenar um vertice na forma do inicio da lista de formas geometricas
-// Armazena sempre no inicio da lista
-void pushVertice(int x, int y) {
-    vertice v;
-    v.x = x;
-    v.y = y;
-    formas.front().v.push_front(v);
+// Function to store a vertex in the shape of the beginning of the list of geometric shapes
+void pushVertex(int x, int y, bool front = true) {
+    vertex newVertex {
+        newVertex.x = x,
+        newVertex.y = y
+    };
+
+    if (front) {
+        ListShapes.front().v.push_front(newVertex);
+    }
+    else {
+        ListShapes.reverse();
+        ListShapes.front().v.push_front(newVertex);
+        ListShapes.reverse();
+    }
 }
 
-// Funcao para armazenar uma Linha na lista de formas geometricas
-void pushLinha(int x1, int y1, int x2, int y2) {
-    pushForma(LIN);
-    pushVertice(x1, y1);
-    pushVertice(x2, y2);
+// Function to store a transformation in each form in the list
+void pushTransformation(int type, double values[2])
+{
+    transformation newTransformation{
+        newTransformation.type = type
+    };
+
+    for (int i = 0; i < 2; i++)
+    {
+        newTransformation.vertexF[i] = values[i];
+    }
+
+    // Adds the transformation to all shapes drawn up to that point
+    for (forward_list<shapes>::iterator it = ListShapes.begin(); it != ListShapes.end(); ++it)
+    {
+        it->t.push_front(newTransformation);
+    }
 }
 
-/*
- * Declaracoes antecipadas (forward) das funcoes (assinaturas das funcoes)
- */
+/* Function prototype  */
 void init(void);
 void reshape(int w, int h);
 void display(void);
@@ -77,153 +79,150 @@ void menu_popup(int value);
 void keyboard(unsigned char key, int x, int y);
 void mouse(int button, int state, int x, int y);
 void mousePassiveMotion(int x, int y);
-void drawPixel(int x, int y);
-
-// Funcao que percorre a lista de formas geometricas, desenhando-as na tela
-void drawFormas();
-
-// 
-void bresenham(int x1, int y1, int x2, int y2);
-
-// Funcao que implementa o Algoritmo Imediato para rasterizacao de segmentos de retas
-void retaImediata(double x1, double y1, double x2, double y2);
 
 
-/*
- * Funcao principal
- */
-int main(int argc, char** argv) {
+/*  Main function */
+int main(int argc, char** argv) 
+{
+    glutInit(&argc, argv);                          // Passagens de parametro C para o glut
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);    // Selecao do Modo do Display e do Sistema de cor
+    glutInitWindowSize(width, height);              // Tamanho da janela do OpenGL
+    glutInitWindowPosition(100, 100);               // Posicao inicial da janela do OpenGL
+    glutCreateWindow("Paint");                      // Da nome para uma janela OpenGL
 
-    glutInit(&argc, argv); // Passagens de parametro C para o glut
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB); // Selecao do Modo do Display e do Sistema de cor
-    glutInitWindowSize(width, height);  // Tamanho da janela do OpenGL
-    glutInitWindowPosition(100, 100); // Posicao inicial da janela do OpenGL
-    glutCreateWindow("Paint"); // Da nome para uma janela OpenGL
+    init();                                         // Chama funcao init();
 
-    init(); // Chama funcao init();
-
-    glutReshapeFunc(reshape); // funcao callback para redesenhar a tela
-    glutKeyboardFunc(keyboard); // funcao callback do teclado
-    glutMouseFunc(mouse); // funcao callback do mouse
-    glutPassiveMotionFunc(mousePassiveMotion); // funcao callback do movimento passivo do mouse
-    glutDisplayFunc(display); // funcao callback de desenho
+    glutReshapeFunc(reshape);                       // funcao callback para redesenhar a tela
+    glutKeyboardFunc(keyboard);                     // funcao callback do teclado
+    glutMouseFunc(mouse);                           // funcao callback do mouse
+    glutPassiveMotionFunc(mousePassiveMotion);      // funcao callback do movimento passivo do mouse
+    glutDisplayFunc(display);                       // funcao callback de desenho
 
     // Define o menu pop-up
+    int subMenuShapes = glutCreateMenu(menu_popup);
+
+    glutAddMenuEntry("Linha", LINE);
+    glutAddMenuEntry("Retângulo", RECTANGLE);
+    glutAddMenuEntry("Triângulo", TRIANGLE);
+    glutAddMenuEntry("Polígono", POLYGON);
+    glutAddMenuEntry("Circunferência", CIRCLE);
+    glutAddMenuEntry("Balde de tinta", PAINT_BUCKET);
+    glutAddMenuEntry("Retângulo preenchido", FILLED_RECT);
+    glutAddMenuEntry("Triângulo preenchido", FILLED_TRI);
+    glutAddMenuEntry("Polígono preenchido", FILLED_POLY);
+
+    int subMenuTransforms = glutCreateMenu(menu_popup);
+
+    glutAddMenuEntry("Translação", TRANSLATION);
+    glutAddMenuEntry("Escala", SCALING);
+    glutAddMenuEntry("Cisalhamento", SHEARING);
+    glutAddMenuEntry("Reflexão", REFLECTION);
+    glutAddMenuEntry("Rotação", ROTATION);
+
     glutCreateMenu(menu_popup);
-    glutAddMenuEntry("Linha", LIN);
-
-    // glutAddMenuEntry("Retangulo", RET);
-    glutAddMenuEntry("Sair", 0);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
+    glutAddSubMenu("Formas", subMenuShapes);
+    glutAddSubMenu("Transformações", subMenuTransforms);
+    glutAddMenuEntry("Sair", 0);
 
-
-    glutMainLoop(); // executa o loop do OpenGL
-    return EXIT_SUCCESS; // retorna 0 para o tipo inteiro da funcao main();
+    glutMainLoop();                                 // executa o loop do OpenGL
+    return EXIT_SUCCESS;                            // retorna 0 para o tipo inteiro da funcao main();
 }
 
-/*
- * Inicializa alguns parametros do GLUT
- */
-void init(void) {
-    glClearColor(1.0, 1.0, 1.0, 1.0); // Limpa a tela com a cor branca;
+/* Initializes some GLUT parameters */
+void init(void) 
+{
+    glClearColor(1.0, 1.0, 1.0, 1.0);               // Limpa a tela com a cor branca;
 }
 
-/*
- * Ajusta a projecao para o redesenho da janela
- */
+/* Adjusts the projection for window redesign */
 void reshape(int w, int h)
 {
-    // Muda para o modo de projecao e reinicializa o sistema de coordenadas
-    glMatrixMode(GL_PROJECTION);
+    glMatrixMode(GL_PROJECTION);        // Muda para o modo de projecao e reinicializa o sistema de coordenadas
     glLoadIdentity();
 
-    // Definindo o Viewport para o tamanho da janela
-    glViewport(0, 0, w, h);
+    glViewport(0, 0, w, h);             // Definindo o Viewport para o tamanho da janela
 
     width = w;
     height = h;
     glOrtho(0, w, 0, h, -1, 1);
-
-    // muda para o modo de desenho
-    glMatrixMode(GL_MODELVIEW);
+    
+    glMatrixMode(GL_MODELVIEW);         // muda para o modo de desenho
     glLoadIdentity();
-
 }
 
-/*
- * Controla os desenhos na tela
- */
-void display(void) {
-    glClear(GL_COLOR_BUFFER_BIT); // Limpa o buffer de cores e reinicia a matriz
-    glColor3f(0.0, 0.0, 0.0); // Seleciona a cor default como preto
-    drawFormas(); // Desenha as formas geometricas da lista
-    // Desenha texto com as coordenadas da posicao do mouse
+/* Controls the drawings on the screen */
+void display(void)
+{
+    glClear(GL_COLOR_BUFFER_BIT);       // Limpa o buffer de cores e reinicia a matriz
+    glColor3f(0.0, 0.0, 0.0);           // Seleciona a cor default como preto
+
+    drawGUI();
+
+    drawFormas();                       // Desenha as formas geometricas da lista
+ 
     draw_text_stroke(0, 0, "(" + to_string(m_x) + "," + to_string(m_y) + ")", 0.2);
-    glutSwapBuffers(); // manda o OpenGl renderizar as primitivas
-
+    glutSwapBuffers();                  // manda o OpenGl renderizar as primitivas
 }
 
-/*
- * Controla o menu pop-up
- */
-void menu_popup(int value) {
-    if (value == 0) exit(EXIT_SUCCESS);
-    modo = value;
+/* Controls the pop-up menu */
+void menu_popup(int value) 
+{
+    if (value == 0)
+        exit(EXIT_SUCCESS);
+    mode = value;
 }
 
-
-/*
- * Controle das teclas comuns do teclado
- */
-void keyboard(unsigned char key, int x, int y) {
-
-    switch (key) { // key - variavel que possui valor ASCII da tecla precionada
+/* Control of common keyboard keys */
+void keyboard(unsigned char key, int x, int y) 
+{
+    switch (key) {                      // key - variavel que possui valor ASCII da tecla precionada
         case ESC: 
             exit(EXIT_SUCCESS); 
         break;
     }
 }
 
-/*
- * Controle dos botoes do mouse
- */
-void mouse(int button, int state, int x, int y) {
+/* Mouse button control */
+void mouse(int button, int state, int x, int y) 
+{
     switch (button) {
         case GLUT_LEFT_BUTTON:
-            switch (modo) {
-                case LIN:
-                    if (state == GLUT_DOWN) {
+            switch (mode) {
+                case LINE:
+                    if (state == GLUT_UP) {
                         if (click1) {
                             x_2 = x;
                             y_2 = height - y - 1;
+
+                            // Verifica se o clique nao foi na area de opcoes
+                            if (y_2 <= height - 50)
+                            {
+                                click1 = false;
+                                pushShape(mode, 0);
+                                pushVertex(x_1, y_1);
+                                pushVertex(x_2, y_2);
+                            }
                             printf("Clique 2(%d, %d)\n", x_2, y_2);
-                            pushLinha(x_1, y_1, x_2, y_2);
+                            //push(x_1, y_1, x_2, y_2);
                             click1 = false;
                             glutPostRedisplay();
                         }
                         else {
-                            click1 = true;
                             x_1 = x;
                             y_1 = height - y - 1;
+
+                            // Verifica se o clique nao foi na area de opcoes
+                            if (y_1 <= height - 50)
+                            {
+                                click1 = true;
+                            }
                             printf("Clique 1(%d, %d)\n", x_1, y_1);
                         }
                     }
                 break;
             }
         break;
-
-            //        case GLUT_MIDDLE_BUTTON:
-            //            if (state == GLUT_DOWN) {
-            //                glutPostRedisplay();
-            //            }
-            //        break;
-            //
-            //        case GLUT_RIGHT_BUTTON:
-            //            if (state == GLUT_DOWN) {
-            //                glutPostRedisplay();
-            //            }
-            //        break;
-
     }
 }
 
@@ -234,203 +233,3 @@ void mousePassiveMotion(int x, int y) {
     m_x = x; m_y = height - y - 1;
     glutPostRedisplay();
 }
-
-/*
- * Funcao para desenhar apenas um pixel na tela
- */
-void drawPixel(int x, int y) {
-    glBegin(GL_POINTS); // Seleciona a primitiva GL_POINTS para desenhar
-        glVertex2i(x, y);
-    glEnd();  // indica o fim do ponto
-}
-
-/*
- * Funcao que desenha a lista de formas geometricas
- */
-void drawFormas() {
-
-    // Apos o primeiro clique, desenha a reta com a posicao atual do mouse
-    if (click1) 
-        bresenham(x_1, y_1, m_x, m_y);
-
-    // Percorre a lista de formas geometricas para desenhar
-    for (forward_list<forma>::iterator f = formas.begin(); f != formas.end(); f++) {
-
-        switch (f->tipo) {
-            case LIN:
-                int i = 0, x[2], y[2];
-
-                // Percorre a lista de vertices da forma linha para desenhar
-                for (forward_list<vertice>::iterator v = f->v.begin(); v != f->v.end(); v++, i++) {
-                    x[i] = v->x;
-                    y[i] = v->y;
-                }
-
-                // Desenha o segmento de reta apos dois cliques
-                bresenham(x[0], y[0], x[1], y[1]);
-            break;
-            // case RET:
-            // break;
-        }
-    }
-}
-
-/*
- * Funcao que implementa o Algoritmo de Rasterizacao da Reta Imediata
- */
-void retaImediata(double x1, double y1, double x2, double y2) {
-
-    double m, b, yd, xd;
-    double xmin, xmax, ymin, ymax;
-
-    drawPixel((int)x1, (int)y1);
-    if (x2 - x1 != 0) { // Evita a divisao por zero
-        m = (y2 - y1) / (x2 - x1);
-        b = y1 - (m * x1);
-
-        if (m >= -1 && m <= 1) { // Verifica se o declive da reta tem tg de -1 a 1, se verdadeira calcula incrementando x
-            xmin = (x1 < x2) ? x1 : x2;
-            xmax = (x1 > x2) ? x1 : x2;
-
-            for (int x = (int)xmin + 1; x < xmax; x++) {
-                yd = (m * x) + b;
-                yd = floor(0.5 + yd);
-                drawPixel(x, (int)yd);
-            }
-        }
-        else { // Se tg menor que -1 ou maior que 1, calcula incrementado os valores de y
-            ymin = (y1 < y2) ? y1 : y2;
-            ymax = (y1 > y2) ? y1 : y2;
-
-            for (int y = (int)ymin + 1; y < ymax; y++) {
-                xd = (y - b) / m;
-                xd = floor(0.5 + xd);
-                drawPixel((int)xd, y);
-            }
-        }
-
-    }
-    else { // se x2-x1 == 0, reta perpendicular ao eixo x
-        ymin = (y1 < y2) ? y1 : y2;
-        ymax = (y1 > y2) ? y1 : y2;
-        for (int y = (int)ymin + 1; y < ymax; y++) {
-            drawPixel((int)x1, y);
-        }
-    }
-    drawPixel((int)x2, (int)y2);
-}
-
-/*
- * Function that implements the Bresenham Algorithm (considering only the first octant)
- * 
- * Note: The Bresenham algorithm, as presented, assumes that the slope of the straight line segments to be rasterized 
- * is included in the interval [0;1] and that the algorithm is applied for increasing values ??of the coordinatex away 
- * from one unit. This means that the Bresenham algorithm is only applicable to straight segments existing in the first octant.
- * For line segments that do not exist in the first octant, you must transform them to the first octant before applying the Bresenham 
- * algorithm and applying the inverse transformation to the pixels that the algorithm calculates. ( Prof. Lopes (Portugal) )
- * 
- * OBS: this only has the first octant
- */
-void bresenham(int x1, int y1, int x2, int y2) {
-
-    int deltaX = abs(x2 - x1); // Calculate the absolute difference between x2 and x1
-    int deltaY = abs(y2 - y1); // Calculate the absolute difference between y2 and y1
-
-    // Direction of the increment for x and y
-    int incE = 2 * deltaY;
-    int incNE = 2 * (deltaY - deltaX);
-
-    int d = 2 * deltaY - deltaX;
-
-    // Draw with GL_POINTS primitive
-    glBegin(GL_POINTS);
-
-    // Draw the current point
-    glVertex2i(x1, y1);
-
-    while (x1 < x2) {
-
-        if (d <= 0) {
-            d += incE;
-        }
-        else {
-            d += incNE;
-            y1++;
-        }
-        x1++;
-        glVertex2i(x1, y1);
-    }
-    glEnd();
-}
-
-
-/*
- * Function that implements the Bresenham Algorithm (considering all the octants)
- *
- * Note: The Bresenham algorithm, as presented, assumes that the slope of the straight line segments to be rasterized
- * is included in the interval [0;1] and that the algorithm is applied for increasing values ??of the coordinatex away
- * from one unit. This means that the Bresenham algorithm is only applicable to straight segments existing in the first octant.
- * For line segments that do not exist in the first octant, you must transform them to the first octant before applying the Bresenham
- * algorithm and applying the inverse transformation to the pixels that the algorithm calculates. ( Prof. Lopes (Portugal) )
- *
- * OBS: This one has all the octants
- */
-
-/*
-void bresenham(int x1, int y1, int x2, int y2) {
-
-    int deltaX = abs(x2 - x1);
-    int deltaY = abs(y2 - y1);
-
-    int signalX = (x1 < x2) ? 1 : -1;
-    int signalY = (y1 < y2) ? 1 : -1;
-
-    int incE, incNE, d;
-
-    glBegin(GL_POINTS);
-
-    glVertex2i(x1, y1);
-
-    if (deltaX > deltaY) {
-
-        d = 2 * deltaY - deltaX;
-        incE = 2 * deltaY;
-        incNE = 2 * (deltaY - deltaX);
-
-        while (x1 != x2) {
-
-            if (d <= 0) {
-                d += incE;
-                x1 += signalX;
-            }
-            else {
-                d += incNE;
-                x1 += signalX;
-                y1 += signalY;
-            }
-            glVertex2i(x1, y1);
-        }
-    }
-    else {
-
-        d = 2 * deltaX - deltaY;
-        incE = 2 * deltaX;
-        incNE = 2 * (deltaX - deltaY);
-
-        while (y1 != y2) {
-
-            if (d <= 0) {
-                d += incE;
-                y1 += signalY;
-            }
-            else {
-                d += incNE;
-                x1 += signalX;
-                y1 += signalY;
-            }
-            glVertex2i(x1, y1);
-        }
-    }
-    glEnd();
-}
-*/

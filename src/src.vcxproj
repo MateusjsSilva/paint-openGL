@@ -131,6 +131,14 @@
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="glut_text.h" />
+    <ClInclude Include="utils\algorithms.h" />
+    <ClInclude Include="utils\algorithms\bresenham.h" />
+    <ClInclude Include="utils\algorithms\flood_fill.h" />
+    <ClInclude Include="utils\algorithms\scanline_polygon_fill_algorithm.h" />
+    <ClInclude Include="utils\data_structures.h" />
+    <ClInclude Include="utils\graphical_user_interface.h" />
+    <ClInclude Include="utils\shapes.h" />
+    <ClInclude Include="utils\transformations.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="paint.cpp" />
