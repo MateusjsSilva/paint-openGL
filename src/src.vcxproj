@@ -129,8 +129,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="config.h" />
-    <ClInclude Include="glut_text.h" />
+    <ClInclude Include="config\config.h" />
+    <ClInclude Include="config\global_variables.h" />
+    <ClInclude Include="config\glut_text.h" />
     <ClInclude Include="utils\algorithms.h" />
     <ClInclude Include="utils\algorithms\bresenham.h" />
     <ClInclude Include="utils\algorithms\flood_fill.h" />

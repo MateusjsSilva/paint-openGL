@@ -1,5 +1,3 @@
-#pragma once
-
 /*
  * Computacao Grafica
  * Codigo Exemplo: Paint OpenGL
@@ -7,147 +5,227 @@
  * Mofificado por: Mateus Silva
  */
 
+#pragma once
+
 #ifndef bresenham_h
     #define bresenham_h
 
     /*
-    * Function that implements the Bresenham Algorithm (considering all the octants)
+    * Function that implements the Bresenham Algorithm for rasterization of line segments
     */
-    forward_list<vertex> bresenham(double x1, double y1, double x2, double y2)
+    std::forward_list<vertex> bresenhamLine(double x1, double y1, double x2, double y2)
     {
-        // Lista de vertices a serem desenhados
-        forward_list<vertex> listaVertices;
+        // List of vertices to be drawn
+        forward_list<vertex> vertexList;
 
-        // Coordenadas originais
-        int xInicio = (int)x1;
-        int yInicio = (int)y1;
-        vertex v1; v1.x = x1; v1.y = y1;
-        listaVertices.push_front(v1);
+        // Original coordinates
+        int xStart = static_cast<int>(x1);
+        int yStart = static_cast<int>(y1);
 
-        int xFim = (int)x2;
-        int yFim = (int)y2;
-        vertex v2; v2.x = x2; v2.y = y2;
-        listaVertices.push_front(v2);
+        vertex v1{
+            x1, y1 
+        };
+        vertexList.push_front(v1);
 
-        // Variaveis - parte 1
-        int variacaoX = xFim - xInicio;
-        int variacaoY = yFim - yInicio;
+        int xEnd = static_cast<int>(x2);
+        int yEnd = static_cast<int>(y2);
 
-        // Reducao ao primeiro octante
-        int tmp;
+        vertex v2{
+            x2, y2 
+        };
+        vertexList.push_front(v2);
 
-        // Verifica se o declive eh negativo
-        bool simetrico = false;
+        // Variables - part 1
+        int deltaX = xEnd - xStart;
+        int deltaY = yEnd - yStart;
 
-        int coeficienteAngular = variacaoX * variacaoY;
-        if (coeficienteAngular < 0)
+        // Reduction to the first octant
+        int tmp = 0;
+
+        // Check if the slope is negative
+        bool symmetric = false;
+
+        int slope = deltaX * deltaY;
+        if (slope < 0)
         {
-            simetrico = true;
+            symmetric = true;
 
-            // Troca o sinal das coordenadas Y
-            yInicio *= (-1);
-            yFim *= (-1);
-            variacaoY *= (-1);
+            // Change the sign of the Y coordinates
+            yStart *= (-1);
+            yEnd *= (-1);
+            deltaY *= (-1);
         }
 
-        // Verifica se o declive eh superior a 1
-        bool declive = false;
+        // Check if the slope is greater than 1
+        bool steep = false;
 
-        if (abs(variacaoX) < abs(variacaoY))
+        if (abs(deltaX) < abs(deltaY))
         {
-            declive = true;
+            steep = true;
 
-            // Troca a posicao de x e y em cada coordenada
-            tmp = xInicio;
-            xInicio = yInicio;
-            yInicio = tmp;
-
-            tmp = xFim;
-            xFim = yFim;
-            yFim = tmp;
-
-            tmp = variacaoX;
-            variacaoX = variacaoY;
-            variacaoY = tmp;
+            // Swap the position of x and y in each coordinate
+            std::swap(xStart, yStart);
+            std::swap(xEnd, yEnd);
+            std::swap(deltaX, deltaY);
         }
 
-        // Verifica se xInicio eh maior que xFim
-        if (xInicio > xFim)
+        // Check if xStart is greater than xEnd
+        if (xStart > xEnd)
         {
-            // Troca a ordem das coordenadas
-            tmp = xInicio;
-            xInicio = xFim;
-            xFim = tmp;
-
-            tmp = yInicio;
-            yInicio = yFim;
-            yFim = tmp;
-
-            variacaoX *= (-1);
-            variacaoY *= (-1);
+            // Swap the order of the coordinates
+            std::swap(xStart, xEnd);
+            std::swap(yStart, yEnd);
+            deltaX *= (-1);
+            deltaY *= (-1);
         }
 
-        // Variaveis - parte 2
-        int d = (2 * variacaoY) - variacaoX;
-        int incE = (2 * variacaoY);
-        int incNE = 2 * (variacaoY - variacaoX);
+        // Variables - part 2
+        int d = (2 * deltaY) - deltaX;
+        int incE = (2 * deltaY);
+        int incNE = 2 * (deltaY - deltaX);
 
-        // Algoritmo de Bresenham
+        // Bresenham Algorithm
         int bresenhamX, bresenhamY;
-        int Yi = yInicio;
+        int Yi = yStart;
 
-        for (int Xi = xInicio; Xi <= xFim; Xi++)
+        for (int Xi = xStart; Xi <= xEnd; Xi++)
         {
-            // Primeiro ponto
-            if (Xi == xInicio)
+            // First point
+            if (Xi == xStart)
             {
-                bresenhamX = xInicio;
-                bresenhamY = yInicio;
+                bresenhamX = xStart;
+                bresenhamY = yStart;
             }
 
-            // Ultimo ponto
-            else if (Xi == xFim)
+            // Last point
+            else if (Xi == xEnd)
             {
-                bresenhamX = xFim;
-                bresenhamY = yFim;
+                bresenhamX = xEnd;
+                bresenhamY = yEnd;
             }
 
-            // Restante
+            // Remaining
             else
             {
                 bresenhamX = Xi;
 
                 if (d <= 0)
                 {
-                    d += incE;      // Avanco pro Leste
+                    d += incE;      // Move to the East
                 }
                 else
                 {
-                    d += incNE;    // Avanco pro Nordeste
+                    d += incNE;    // Move to the Northeast
                     Yi += 1;
                 }
+
                 bresenhamY = Yi;
             }
 
-            // Transformacao inversa
-            if (declive == true)
-            {
-                tmp = bresenhamX;
-                bresenhamX = bresenhamY;
-                bresenhamY = tmp;
-            }
+            // Inverse transformation
+            if (steep == true)
+                std::swap(bresenhamX, bresenhamY);
 
-            if (simetrico == true)
-            {
+            if (symmetric == true)
                 bresenhamY *= (-1);
+
+            vertex v{ bresenhamX, bresenhamY };
+            vertexList.push_front(v);
+        }
+        return vertexList;
+    }
+
+    /*
+     * Function that implements the Bresenham Algorithm for rasterization of circles
+    */
+    forward_list<vertex> bresenhamCircle(double x1, double y1, double x2, double y2)
+    {
+        // List of vertices to be drawn
+        forward_list<vertex> vertexList;
+
+        // Original coordinates
+        int xCenter = static_cast<int>(x1);
+        int yCenter = static_cast<int>(y1);
+        int xRadius = static_cast<int>(x2);
+        int yRadius = static_cast<int>(y2);
+
+        // Variables    
+        int d = 1 - yRadius;
+        int incE = 3;
+        int incSE = (-2 * yRadius) + 5;
+
+        // Bresenham Algorithm
+        int bresenhamX, bresenhamY;
+        int Yi = yRadius;
+
+        for (int Xi = 0; Yi > Xi; Xi++)
+        {
+            // First point and Last point
+            if (Xi == 0 || Xi == Yi)
+            {
+                bresenhamX = Xi;
+                bresenhamY = Yi;
             }
 
+            // Remaining
+            else
+            {
+                bresenhamX = Xi;
+
+                if (d < 0)
+                {
+                    d += incE;      // Move to the East
+                    incE += 2;
+                    incSE += 2;
+                }
+                else
+                {
+                    d += incSE;     // Move to the Southeast
+                    incE += 2;
+                    incSE += 4;
+                    Yi--;
+                }
+
+                bresenhamY = Yi;
+            }
+
+            // Draw the points (Translation + Octant Symmetry)
+
+            // Coordinate to be rasterized is (0, R)
             vertex v;
-            v.x = bresenhamX;
-            v.y = bresenhamY;
-            listaVertices.push_front(v);
+            if (Xi == 0)
+            {
+                v.x = xCenter + bresenhamX; v.y = yCenter + bresenhamY;
+                vertexList.push_front(v);
+                v.x = xCenter + bresenhamX; v.y = yCenter - bresenhamY;
+                vertexList.push_front(v);
+                v.x = xCenter + bresenhamY; v.y = yCenter + bresenhamX;
+                vertexList.push_front(v);
+                v.x = xCenter - bresenhamY; v.y = yCenter - bresenhamX;
+                vertexList.push_front(v);
+            }
+            else
+            {
+                v.x = xCenter + bresenhamX; v.y = yCenter + bresenhamY;
+                vertexList.push_front(v);
+                v.x = xCenter + bresenhamY; v.y = yCenter + bresenhamX;
+                vertexList.push_front(v);
+                v.x = xCenter + bresenhamY; v.y = yCenter - bresenhamX;
+                vertexList.push_front(v);
+                v.x = xCenter + bresenhamX; v.y = yCenter - bresenhamY;
+                vertexList.push_front(v);
+
+                v.x = xCenter - bresenhamX; v.y = yCenter - bresenhamY;
+                vertexList.push_front(v);
+                v.x = xCenter - bresenhamY; v.y = yCenter - bresenhamX;
+                vertexList.push_front(v);
+                v.x = xCenter - bresenhamY; v.y = yCenter + bresenhamX;
+                vertexList.push_front(v);
+                v.x = xCenter - bresenhamX; v.y = yCenter + bresenhamY;
+                vertexList.push_front(v);
+            }
         }
-        return listaVertices;
+        return vertexList;
     }
 
 #endif /* bresenham_h */

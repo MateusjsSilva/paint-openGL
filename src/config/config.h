@@ -18,11 +18,12 @@
 	#include <GL/glu.h>
 #endif
 
-// Include other libraries
+ // Include other libraries
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <forward_list>
+#include <vector>
 
 // Define PI if not already defined
 #ifndef M_PI

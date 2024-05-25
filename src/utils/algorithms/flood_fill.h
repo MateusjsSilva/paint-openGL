@@ -26,7 +26,6 @@
             }
         }
 
-
         // Se nao tenha sido, faz a verificacao
         if (jaAnalisado == false)
         {
@@ -41,7 +40,7 @@
             {
                 // Pinta o pixel com a nova cor
                 glColor3f(corNova[0], corNova[1], corNova[2]);
-                drawPixel(x1, y1, 0);
+                drawPixel(x1, y1);
 
 
                 // Salva o vertice na lista de vertices ja analisados
@@ -59,4 +58,5 @@
             }
         }
     }
+
 #endif /* flood_fill_h */

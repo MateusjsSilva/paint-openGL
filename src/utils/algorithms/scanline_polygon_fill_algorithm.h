@@ -10,18 +10,18 @@
 #ifndef scanline_polygon_fill_algorithm_h
 	#define scanline_polygon_fill_algorithm_h
 
-     /*
-      * Funcao que implementa o Algoritmo de Preenchimento de Poligonos
-      * para o desenho de poligonos coloridos
-     */
-   /* forward_list<vertex> preenchePoligono(double x[], double y[], int tamanhoVetor)
+    /*
+    * Funcao que implementa o Algoritmo de Preenchimento de Poligonos
+    * para o desenho de poligonos coloridos
+    */
+    forward_list<vertex> preenchePoligono(std::vector<double> x, std::vector<double> y, int tamanhoVetor)
     {
         // Lista de vertices a serem desenhados
         forward_list<vertex> listaVertices;
 
 
         // Descobre a quantidade de arestas a serem analisadas no poligono
-        int contArestas = 0;
+        static int contArestas = 0;
         for (int i = 0; i < tamanhoVetor; i++)
         {
             double x0, y0, x1, y1;
@@ -53,9 +53,11 @@
             }
         }
 
+        int a = 2 * contArestas;
 
         // Listas com os vertices das arestas validas
-        double coordsX[2 * contArestas], coordsY[2 * contArestas];
+        std::vector<double> coordsX(a), coordsY(a);
+
         int k = 0;
         for (int i = 0; i < tamanhoVetor; i++)
         {
@@ -96,7 +98,7 @@
 
         // Cria a Tabela de Arestas
         // Cada linha eh uma aresta com os dados: [yMin | yMax | x_yMin | mInvert]
-        double ta[contArestas][4];
+        std::vector<std::vector<double>> ta(contArestas, std::vector<double>(4));
 
         int pos = 0;
         double menorY = 1.79769e+308, maiorY = 0.0;
@@ -157,7 +159,13 @@
 
 
 
-        // Ordenacoes pra garantir a seguinte leitura dos vertices das arestas na TA
+        // Ordenacoes pra garantir a seguinte leitura 
+        /*
+            (      ^
+             \    /
+              `__´
+        */
+        // dos vertices das arestas na TA
 
 
         // Ordena a TA com base nos yMin (InsertionSort)
@@ -241,7 +249,8 @@
 
 
         // Cria a Tabela de Arestas Ativas
-        double taa[contArestas][4];
+        std::vector<std::vector<double>> taa(contArestas, std::vector<double>(4));
+
         for (int i = 0; i < contArestas; i++)
         {
             for (int j = 0; j < 4; j++)
@@ -407,5 +416,5 @@
 
         return listaVertices;
     }
-    */
+
 #endif /* scanline_polygon_fill_algorithm_h */

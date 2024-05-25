@@ -12,7 +12,7 @@
 
     struct vertex
     {
-        int x; int y;
+        int x, y;
     };
 
     struct transformation
@@ -22,10 +22,10 @@
 
     struct shapes
     {
-        int type;
-        float red, green, blue;
-        forward_list<vertex> v;
-        forward_list<transformation> t;
+        int type{};
+        float red{}, green{}, blue{};
+        forward_list<vertex> vertexs;
+        forward_list<transformation> transformations;
     };
 
     // Types of geometric shapes
