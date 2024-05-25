@@ -11,186 +11,187 @@
 	#define transformations_h
 	
     /*
-    * Funcao responsavel por calcular a transformacao de translacao de um determinado vertice
+    * Function: applyTranslation
+    * ---------------------------
+    * Applies translation transformation to a given vertex.
     */
-    void translacao(double* desenhoX, double* desenhoY, double Tx, double Ty)
+    void applyTranslation(double* x, double* y, double Tx, double Ty)
     {
-        double matriz[] = { 1 , 0 , 0,
-                           0 , 1 , 0,
-                           Tx, Ty, 1 };
+        // Translation matrix
+        double matrix[] = { 1 , 0 , 0,
+                            0 , 1 , 0,
+                            Tx, Ty, 1 };
 
-        // Coordenadas
-        *desenhoX = *desenhoX + matriz[6];
-        *desenhoY = *desenhoY + matriz[7];
-    }
-
-
-    /*
-     * Funcao responsavel por calcular a transformacao de escala de um determinado vertice
-    */
-    void escala(double* desenhoX, double* desenhoY, double Sx, double Sy)
-    {
-        double matriz[] = { Sx, 0 , 0,
-                           0 , Sy, 0,
-                           0 , 0 , 1 };
-
-        // Coordenadas
-        *desenhoX = (*desenhoX * matriz[0]);
-        *desenhoY = (*desenhoY * matriz[4]);
-    }
-
-
-    /*
-     * Funcao responsavel por calcular a transformacao de cisalhamento de um determinado vertice
-    */
-    void cisalhamento(double* desenhoX, double* desenhoY, double eixo, double valor)
-    {
-        switch ((char)eixo)
-        {
-        case 'x':
-        {
-            double c = valor - 48;
-
-            double matriz[] = { 1, 0, 0,
-                               c, 1, 0,
-                               0, 0, 1 };
-
-            // Coordenadas
-            *desenhoX = *desenhoX + (*desenhoY * matriz[3]);
-            *desenhoY = *desenhoY;
-        }
-        break;
-
-        case 'y':
-        {
-            double c = valor - 48;
-
-            double matriz[] = { 1, c, 0,
-                               0, 1, 0,
-                               0, 0, 1 };
-
-            // Coordenadas
-            *desenhoX = *desenhoX;
-            *desenhoY = *desenhoY + (*desenhoX * matriz[1]);
-        }
-        break;
-        }
-    }
-
-
-    /*
-     * Funcao responsavel por calcular a transformacao de reflexao de um determinado vertice
-    */
-    void reflexao(double* desenhoX, double* desenhoY, double eixo)
-    {
-        switch ((char)eixo)
-        {
-        case 'x':
-        {
-            double matriz[] = { 1,  0, 0,
-                               0, -1, 0,
-                               0,  0, 1 };
-
-            // Coordenadas
-            *desenhoX = *desenhoX;
-            *desenhoY *= matriz[4];
-        }
-        break;
-
-        case 'y':
-        {
-            double matriz[] = { -1, 0, 0,
-                                0, 1, 0,
-                                0, 0, 1 };
-
-            // Coordenadas
-            *desenhoX *= matriz[0];
-            *desenhoY = *desenhoY;
-        }
-        break;
-
-        case '0':
-        {
-            double matriz[] = { -1,  0, 0,
-                                0, -1, 0,
-                                0,  0, 1 };
-
-            // Coordenadas
-            *desenhoX *= matriz[0];
-            *desenhoY *= matriz[4];
-        }
-        break;
-        }
-    }
-
-
-    /*
-     * Funcao responsavel por calcular a transformacao de rotacao de um determinado vertice
-    */
-    void rotacao(double* desenhoX, double* desenhoY, double teta)
-    {
-        double matriz[] = { cos(teta), sin(teta), 0,
-                           -sin(teta), cos(teta), 0,
-                                    0,         0, 1 };
-
-        double tempX = (*desenhoX * matriz[0]) + (*desenhoY * matriz[3]);
-        double tempY = (*desenhoX * matriz[1]) + (*desenhoY * matriz[4]);
-
-        // Coordenadas
-        *desenhoX = tempX;
-        *desenhoY = tempY;
+        // Apply transformation
+        *x += matrix[6];
+        *y += matrix[7];
     }
 
     /*
-     * Funcao responsavel por aplicar as transformacoes da forma em cada vertice da mesma
+     * Function: applyScaling
+     * -----------------------
+     * Applies scaling transformation to a given vertex.
      */
-    void aplicaTransformacao(double* desenhoX, double* desenhoY, int centroX, int centroY, forward_list<transformation>::iterator tr)
+    void applyScaling(double* x, double* y, double Sx, double Sy)
     {
-        // Aplica a transformacao geometrica com base no tipo
+        // Scaling matrix
+        double matrix[] = { Sx, 0 , 0,
+                            0 , Sy, 0,
+                            0 , 0 , 1 };
+
+        *x *= matrix[0];
+        *y *= matrix[4];
+    }
+
+    /*
+     * Function: applyShearing
+     * ------------------------
+     * Applies shearing transformation to a given vertex along the specified axis.
+     */
+    void applyShearing(double* x, double* y, double axis, double value)
+    {
+        switch ((char)axis)
+        {
+            case 'x':
+            {
+                double c = value - 48;
+
+                // Shearing matrix
+                double matrix[] = { 1, 0, 0,
+                                    c, 1, 0,
+                                    0, 0, 1 };
+
+                *x += (*y * matrix[3]);
+                *y = *y;
+            }
+            break;
+
+            case 'y':
+            {
+                double c = value - 48;
+
+                // Shearing matrix
+                double matrix[] = { 1, c, 0,
+                                    0, 1, 0,
+                                    0, 0, 1 };
+
+                *x = *x;
+                *y += (*x * matrix[1]);
+            }
+            break;
+        }
+    }
+
+    /*
+     * Function: applyReflection
+     * --------------------------
+     * Applies reflection transformation to a given vertex along the specified axis.
+     */
+    void applyReflection(double* x, double* y, double axis)
+    {
+        switch ((char)axis)
+        {
+            case 'x':
+            {
+                // Reflection matrix
+                double matrix[] = { 1,  0, 0,
+                                    0, -1, 0,
+                                    0,  0, 1 };
+
+                *x = *x;
+                *y *= matrix[4];
+            }
+            break;
+
+            case 'y':
+            {
+                // Reflection matrix
+                double matrix[] = { -1, 0, 0,
+                                     0, 1, 0,
+                                     0, 0, 1 };
+
+                *x *= matrix[0];
+                *y = *y;
+            }
+            break;
+
+            case '0':
+            {
+                // Reflection matrix
+                double matrix[] = { -1,  0, 0,
+                                     0, -1, 0,
+                                     0,  0, 1 };
+
+                *x *= matrix[0];
+                *y *= matrix[4];
+            }
+            break;
+        }
+    }
+
+    /*
+     * Function: applyRotation
+     * ------------------------
+     * Applies rotation transformation to a given vertex by the specified angle.
+     */
+    void applyRotation(double* x, double* y, double theta)
+    {
+        // Rotation matrix
+        double matrix[] = { cos(theta), sin(theta), 0,
+                           -sin(theta), cos(theta), 0,
+                                     0,         0, 1 };
+
+        double tempX = (*x * matrix[0]) + (*y * matrix[3]);
+        double tempY = (*x * matrix[1]) + (*y * matrix[4]);
+
+        *x = tempX;
+        *y = tempY;
+    }
+
+    /*
+     * Function: applyTransformation
+     * ------------------------------
+     * Applies the specified transformation to a vertex based on the transformation type.
+     */
+    void applyTransformation(double* x, double* y, int centerX, int centerY, forward_list<transformation>::iterator tr)
+    {
         switch (tr->type)
         {
-        case TRANSLATION:
-        {
-            translacao(desenhoX, desenhoY, tr->vertexF[0], tr->vertexF[1]);
-        }
-        break;
-
-        case SCALING:
-        {
-            escala(desenhoX, desenhoY, tr->vertexF[0], tr->vertexF[1]);
-        }
-        break;
-
-        case SHEARING:
-        {
-            cisalhamento(desenhoX, desenhoY, tr->vertexF[0], tr->vertexF[1]);
-        }
-        break;
-
-        case REFLECTION:
-        {
-            reflexao(desenhoX, desenhoY, tr->vertexF[0]);
-            switch ((char)tr->vertexF[0])
-            {
-            case 'x': translacao(desenhoX, desenhoY, 0, 2 * centroY);
+            case TRANSLATION:
+                applyTranslation(x, y, tr-> vertexF[0], tr-> vertexF[1]);
                 break;
 
-            case 'y': translacao(desenhoX, desenhoY, 2 * centroX, 0);
+            case SCALING:
+                applyScaling(x, y, tr-> vertexF[0], tr-> vertexF[1]);
                 break;
 
-            case '0': translacao(desenhoX, desenhoY, 2 * centroX, 2 * centroY);
+            case SHEARING:
+                applyShearing(x, y, tr-> vertexF[0], tr-> vertexF[1]);
                 break;
-            }
-        }
-        break;
 
-        case ROTATION:
-        {
-            translacao(desenhoX, desenhoY, -centroX, -centroY);
-            rotacao(desenhoX, desenhoY, tr->vertexF[0]);
-            translacao(desenhoX, desenhoY, centroX, centroY);
-        }
-        break;
+            case REFLECTION:
+                applyReflection(x, y, tr-> vertexF[0]);
+                switch ((char)tr-> vertexF[0])
+                {
+                    case 'x':
+                        applyTranslation(x, y, 0, 2 * centerY);
+                        break;
+
+                    case 'y':
+                        applyTranslation(x, y, 2 * centerX, 0);
+                        break;
+
+                    case '0':
+                        applyTranslation(x, y, 2 * centerX, 2 * centerY);
+                        break;
+                }
+                break;
+
+            case ROTATION:
+                applyTranslation(x, y, -centerX, -centerY);
+                applyRotation(x, y, tr -> vertexF[0]);
+                applyTranslation(x, y, centerX, centerY);
+                break;
         }
     }
 
