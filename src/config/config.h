@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <forward_list>
+#include <vector>
 
 // Define PI if not already defined
 #ifndef M_PI
@@ -33,3 +34,5 @@
 #ifndef ESC
 	#define ESC 27 
 #endif
+
+using namespace std;

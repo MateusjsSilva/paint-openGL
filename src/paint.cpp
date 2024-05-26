@@ -5,71 +5,16 @@
  * Mofificado por: Mateus Silva
  */
 
-#include "config.h"
-#include "glut_text.h"
+#include "config/config.h"
+#include "config/glut_text.h"
+#include "utils/data_structures.h"
+#include "config/global_variables.h"
+#include "utils/algorithms.h"
+#include "utils/shapes.h"
+#include "utils/transformations.h"
+#include "utils/graphical_user_interface.h"
 
-using namespace std;
-
-// Enumeracao com os tipos de formas geometricas
-enum tipo_forma { LIN = 1, TRI, RET, POL, CIR }; // Linha, Triangulo, Retangulo Poligono, Circulo
-
-// Verifica se foi realizado o primeiro clique do mouse
-bool click1 = false;
-
-// Coordenadas da posicao atual do mouse
-int m_x, m_y;
-
-// Coordenadas do primeiro clique e do segundo clique do mouse
-int x_1, y_1, x_2, y_2;
-
-// Indica o tipo de forma geometrica ativa para desenhar
-int modo = LIN;
-
-// Largura e altura da janela
-int width = 512, height = 512;
-
-// Definicao de vertice
-struct vertice {
-    int x;
-    int y;
-};
-
-// Definicao das formas geometricas
-struct forma {
-    int tipo;
-    forward_list<vertice> v; // lista encadeada de vertices
-};
-
-// Lista encadeada de formas geometricas
-forward_list<forma> formas;
-
-// Funcao para armazenar uma forma geometrica na lista de formas
-// Armazena sempre no inicio da lista
-void pushForma(int tipo) {
-    forma f;
-    f.tipo = tipo;
-    formas.push_front(f);
-}
-
-// Funcao para armazenar um vertice na forma do inicio da lista de formas geometricas
-// Armazena sempre no inicio da lista
-void pushVertice(int x, int y) {
-    vertice v;
-    v.x = x;
-    v.y = y;
-    formas.front().v.push_front(v);
-}
-
-// Funcao para armazenar uma Linha na lista de formas geometricas
-void pushLinha(int x1, int y1, int x2, int y2) {
-    pushForma(LIN);
-    pushVertice(x1, y1);
-    pushVertice(x2, y2);
-}
-
-/*
- * Declaracoes antecipadas (forward) das funcoes (assinaturas das funcoes)
- */
+/* Function forward declarations (function signatures) */
 void init(void);
 void reshape(int w, int h);
 void display(void);
@@ -77,360 +22,607 @@ void menu_popup(int value);
 void keyboard(unsigned char key, int x, int y);
 void mouse(int button, int state, int x, int y);
 void mousePassiveMotion(int x, int y);
-void drawPixel(int x, int y);
+void pushShape(int type, bool front);
+void pushVertex(int x, int y, bool front);
+void pushTransformation(int type, const std::vector<double>& values);
 
-// Funcao que percorre a lista de formas geometricas, desenhando-as na tela
-void drawFormas();
+/*  Main function */
+int main(int argc, char** argv) 
+{
+    glutInit(&argc, argv);                                     // Passagem de parametros C para o glut
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);               // Selecao do modo do Display e do sistema de cor utilizado
+    glutInitWindowSize(width, height);                         // Tamanho da janela do OpenGL
+    glutInitWindowPosition(100, 100);                          // Posicao inicial da janela do OpenGL
+    glutCreateWindow("Paint");                                 // Da nome para uma janela OpenGL
 
-// 
-void bresenham(int x1, int y1, int x2, int y2);
+    init();                                                    // Chama a funcao init()
 
-// Funcao que implementa o Algoritmo Imediato para rasterizacao de segmentos de retas
-void retaImediata(double x1, double y1, double x2, double y2);
-
-
-/*
- * Funcao principal
- */
-int main(int argc, char** argv) {
-
-    glutInit(&argc, argv); // Passagens de parametro C para o glut
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB); // Selecao do Modo do Display e do Sistema de cor
-    glutInitWindowSize(width, height);  // Tamanho da janela do OpenGL
-    glutInitWindowPosition(100, 100); // Posicao inicial da janela do OpenGL
-    glutCreateWindow("Paint"); // Da nome para uma janela OpenGL
-
-    init(); // Chama funcao init();
-
-    glutReshapeFunc(reshape); // funcao callback para redesenhar a tela
-    glutKeyboardFunc(keyboard); // funcao callback do teclado
-    glutMouseFunc(mouse); // funcao callback do mouse
-    glutPassiveMotionFunc(mousePassiveMotion); // funcao callback do movimento passivo do mouse
-    glutDisplayFunc(display); // funcao callback de desenho
+    glutReshapeFunc(reshape);                                  // Callback para redesenhar a tela
+    glutKeyboardFunc(keyboard);                                // Callback do teclado
+    glutMouseFunc(mouse);                                      // Callback do mouse
+    glutPassiveMotionFunc(mousePassiveMotion);                 // Callback do movimento passivo do mouse
+    glutDisplayFunc(display);                                  // Callback de desenho
 
     // Define o menu pop-up
+    int subMenuShapes = glutCreateMenu(menu_popup);
+
+    glutAddMenuEntry("Linha", LINE);
+    glutAddMenuEntry("Retangulo", RECTANGLE);
+    glutAddMenuEntry("Triangulo", TRIANGLE);
+    glutAddMenuEntry("Poligono", POLYGON);
+    glutAddMenuEntry("Circunferencia", CIRCLE);
+    glutAddMenuEntry("Balde de tinta", PAINT_BUCKET);
+    glutAddMenuEntry("Retangulo preenchido", FILLED_RECT);
+    glutAddMenuEntry("Triangulo preenchido", FILLED_TRI);
+    glutAddMenuEntry("Poligono preenchido", FILLED_POLY);
+
+    int subMenuTransforms = glutCreateMenu(menu_popup);
+
+    glutAddMenuEntry("Translacao", TRANSLATION);
+    glutAddMenuEntry("Escala", SCALING);
+    glutAddMenuEntry("Cisalhamento", SHEARING);
+    glutAddMenuEntry("Reflexao", REFLECTION);
+    glutAddMenuEntry("Rotacao", ROTATION);
+
     glutCreateMenu(menu_popup);
-    glutAddMenuEntry("Linha", LIN);
-
-    // glutAddMenuEntry("Retangulo", RET);
-    glutAddMenuEntry("Sair", 0);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
+    glutAddMenuEntry("Mouse", MOUSE);
+    glutAddSubMenu("Formas", subMenuShapes);
+    glutAddSubMenu("Transformacoes", subMenuTransforms);
+    glutAddMenuEntry("Sair", 0);
 
-
-    glutMainLoop(); // executa o loop do OpenGL
-    return EXIT_SUCCESS; // retorna 0 para o tipo inteiro da funcao main();
+    glutMainLoop();                                 // Executa o loop do OpenGL
+    return EXIT_SUCCESS;                            // Eetorna 0 para o tipo inteiro da funcao main();
 }
 
-/*
- * Inicializa alguns parametros do GLUT
- */
-void init(void) {
-    glClearColor(1.0, 1.0, 1.0, 1.0); // Limpa a tela com a cor branca;
+/* Initializes some GLUT parameters */
+void init(void)
+{
+    glClearColor(1.0, 1.0, 1.0, 1.0);
 }
 
-/*
- * Ajusta a projecao para o redesenho da janela
- */
+/* Controls the pop-up menu  */
+void menu_popup(int value) {
+    if (value == 0)
+        exit(EXIT_SUCCESS);
+    shapeMode = value;
+}
+
+/* Adjusts the projection for window redesign */
 void reshape(int w, int h)
 {
-    // Muda para o modo de projecao e reinicializa o sistema de coordenadas
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    // Definindo o Viewport para o tamanho da janela
+    glMatrixMode(GL_PROJECTION);    // Muda pro modo de projecao
+    glLoadIdentity();               // Carrega a matriz identidade
     glViewport(0, 0, w, h);
-
-    width = w;
-    height = h;
-    glOrtho(0, w, 0, h, -1, 1);
-
-    // muda para o modo de desenho
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
+    width = w; height = h;
+    glOrtho(0, w, 0, h, -1, 1); 
 }
 
-/*
- * Controla os desenhos na tela
- */
-void display(void) {
-    glClear(GL_COLOR_BUFFER_BIT); // Limpa o buffer de cores e reinicia a matriz
-    glColor3f(0.0, 0.0, 0.0); // Seleciona a cor default como preto
-    drawFormas(); // Desenha as formas geometricas da lista
-    // Desenha texto com as coordenadas da posicao do mouse
-    draw_text_stroke(0, 0, "(" + to_string(m_x) + "," + to_string(m_y) + ")", 0.2);
-    glutSwapBuffers(); // manda o OpenGl renderizar as primitivas
-
-}
-
-/*
- * Controla o menu pop-up
- */
-void menu_popup(int value) {
-    if (value == 0) exit(EXIT_SUCCESS);
-    modo = value;
-}
-
-
-/*
- * Controle das teclas comuns do teclado
- */
-void keyboard(unsigned char key, int x, int y) {
-
-    switch (key) { // key - variavel que possui valor ASCII da tecla precionada
+/* Control of common keyboard keys */
+void keyboard(unsigned char key, int x, int y)
+{
+    switch (key)
+    {
         case ESC: 
-            exit(EXIT_SUCCESS); 
+            exit(EXIT_SUCCESS);
         break;
     }
 }
 
-/*
- * Controle dos botoes do mouse
- */
-void mouse(int button, int state, int x, int y) {
-    switch (button) {
+/*  Mouse button control  */
+void mouse(int button, int state, int x, int y)
+{
+    switch (button)
+    {   
         case GLUT_LEFT_BUTTON:
-            switch (modo) {
-                case LIN:
-                    if (state == GLUT_DOWN) {
-                        if (click1) {
-                            x_2 = x;
-                            y_2 = height - y - 1;
-                            printf("Clique 2(%d, %d)\n", x_2, y_2);
-                            pushLinha(x_1, y_1, x_2, y_2);
-                            click1 = false;
-                            glutPostRedisplay();
+            switch (shapeMode)
+            {
+                case MOUSE:
+                    if (state == GLUT_UP)
+                    {
+                        mouse_x1 = x; mouse_y1 = height - y - 1;
+                        contVertex = 0;
+                        onButtonClick(mouse_x1, mouse_y1);
+                    }
+                    break;
+
+                case LINE: // ok
+                    if (state == GLUT_UP) {
+                        if (click)
+                        {
+                            mouse_x2 = x; mouse_y2 = height - y - 1;
+                            if (isMenuBar(mouse_y2))
+                            {
+                                click = false; contVertex = 0;
+
+                                pushShape(shapeMode, true);
+                                pushVertex(mouse_x1, mouse_y1, true);
+                                pushVertex(mouse_x2, mouse_y2, true);
+                            }
+                            else
+                                onButtonClick(mouse_x2, mouse_y2);
                         }
-                        else {
-                            click1 = true;
-                            x_1 = x;
-                            y_1 = height - y - 1;
-                            printf("Clique 1(%d, %d)\n", x_1, y_1);
+                        else
+                        {
+                            mouse_x1 = x; mouse_y1 = height - y - 1;
+                            if (isMenuBar(mouse_y1))
+                            {
+                                click = true; contVertex++;
+                            }
+                            else
+                                onButtonClick(mouse_x1, mouse_y1);
                         }
                     }
+                    break;
+
+                case RECTANGLE: // ok
+                    if (state == GLUT_UP)
+                    {
+                        if (click)
+                        {
+                            mouse_x2 = x; mouse_y2 = height - y - 1;
+                            if (isMenuBar(mouse_y2))
+                            {
+                                click = false; contVertex = 0;
+
+                                pushShape(shapeMode, true);
+                                pushVertex(mouse_x1, mouse_y2, true);
+                                pushVertex(mouse_x2, mouse_y2, true);
+                                pushVertex(mouse_x2, mouse_y1, true);
+                                pushVertex(mouse_x1, mouse_y1, true);
+                            }
+                            else
+                                onButtonClick(mouse_x2, mouse_y2);
+                        }
+                        else
+                        {
+                            mouse_x1 = x; mouse_y1 = height - y - 1;
+                            if (isMenuBar(mouse_y1))
+                            {
+                                click = true; contVertex++;
+                            }
+                            else
+                                onButtonClick(mouse_x1, mouse_y1);
+                        }
+                    }
+                    break;
+
+                case TRIANGLE: // ok
+                    if (state == GLUT_UP)
+                    {
+                        if (click)
+                        {
+                            mouse_x2 = x; mouse_y2 = height - y - 1;
+                            if (isMenuBar(mouse_y2))
+                            {
+                                if (contVertex == 1)
+                                {
+                                    click = true; contVertex++;
+                                    pushVertex(mouse_x2, mouse_y2, true);
+                                }
+                                else
+                                {
+                                    click = false; contVertex = 0;
+                                    pushVertex(mouse_x2, mouse_y2, true);
+                                }
+                            }
+                            else
+                                onButtonClick(mouse_x2, mouse_y2);
+                        }
+                        else
+                        {
+                            mouse_x1 = x; mouse_y1 = height - y - 1;
+                            if (isMenuBar(mouse_y1))
+                            {
+                                click = true; contVertex++;
+                                pushShape(shapeMode, true);
+                                pushVertex(mouse_x1, mouse_y1, true);
+                            }
+                            else
+                            {
+                                onButtonClick(mouse_x1, mouse_y1);
+                            }
+                        }
+                    }
+                    break;
+
+                case POLYGON: // ok
+                    if (state == GLUT_UP)
+                    {
+                        if (click)
+                        {
+                            mouse_x2 = x; mouse_y2 = height - y - 1;
+                            if (isMenuBar(mouse_y2))
+                            {
+                                if (contVertex > 3)
+                                {
+                                    if (mouse_x2 == mouse_x1 && mouse_y2 == mouse_y1)
+                                    {
+                                        click = false; contVertex = 0;
+                                        pushVertex(mouse_x2, mouse_y2, true);
+                                    }
+                                    else
+                                    {
+                                        contVertex++;
+                                        pushVertex(mouse_x2, mouse_y2, true);
+                                    }
+                                }
+                                else
+                                {
+                                    contVertex++;
+                                    pushVertex(mouse_x2, mouse_y2, true);
+                                }
+                            }
+                            else
+                                onButtonClick(x, height - y - 1);
+                        }
+                        else
+                        {
+                            mouse_x1 = x; mouse_y1 = height - y - 1;
+                            if (isMenuBar(mouse_y1))
+                            {
+                                click = true; contVertex++;
+                                pushShape(shapeMode, true);
+                                pushVertex(mouse_x1, mouse_y1, true);
+                            }
+                            else
+                                onButtonClick(mouse_x1, mouse_y1);
+                        }
+                    }
+                    break;
+
+                case CIRCLE: // ok
+                    if (state == GLUT_UP)
+                    {
+                        if (click)
+                        {
+                            mouse_x2 = x; mouse_y2 = height - y - 1;
+                            if (isMenuBar(mouse_y2))
+                            {
+                                click = false; contVertex = 0;
+                                pushShape(shapeMode, true);
+                                pushVertex(mouse_x1, mouse_y1, true);
+                                pushVertex(mouse_x2, mouse_y2, true);
+                            }
+                            else
+                                onButtonClick(mouse_x2, mouse_y2);
+                        }
+                        else
+                        {
+                            mouse_x1 = x; mouse_y1 = height - y - 1;
+                            if (isMenuBar(mouse_y1))
+                            {
+                                click = true; contVertex++;
+                            }
+                            else
+                                onButtonClick(mouse_x1, mouse_y1);
+                        }
+                    }
+                    break;
+
+                case PAINT_BUCKET: // ok
+                    if (state == GLUT_UP)
+                    {
+                        if (!click)
+                        {
+                            mouse_x1 = x; mouse_y1 = height - y - 1;
+                            if (isMenuBar(mouse_y1))
+                            {
+                                pushShape(PAINT_BUCKET, false);
+                                pushVertex(mouse_x1, mouse_y1, false);
+                            }
+                            else
+                                onButtonClick(mouse_x1, mouse_y1);
+                        }
+                    }
+                    break;
+
+                case FILLED_RECT: // ok
+                    if (state == GLUT_UP)
+                    {
+                        if (click)
+                        {
+                            mouse_x2 = x; mouse_y2 = height - y - 1;
+                            if (isMenuBar(mouse_y2))
+                            {
+                                click = false; contVertex = 0;
+                                pushShape(shapeMode, false);
+                                pushVertex(mouse_x1, mouse_y2, false);
+                                pushVertex(mouse_x2, mouse_y2, false);
+                                pushVertex(mouse_x2, mouse_y1, false);
+                                pushVertex(mouse_x1, mouse_y1, false);
+                            }
+                            else
+                                onButtonClick(mouse_x2, mouse_y2);
+                        }
+                        else
+                        {
+                            mouse_x1 = x; mouse_y1 = height - y - 1;
+                            if (isMenuBar(mouse_y1))
+                            {
+                                click = true; contVertex++;
+                            }
+                            else
+                                onButtonClick(mouse_x1, mouse_y1);
+                        }
+                    }
+                    break;
+
+                case FILLED_TRI: // ok
+                    if (state == GLUT_UP)
+                    {
+                        if (click)
+                        {
+                            mouse_x2 = x; mouse_y2 = height - y - 1;
+                            if (isMenuBar(mouse_y2))
+                            {
+                                if (contVertex == 1)
+                                {
+                                    click = true; contVertex++;
+                                    pushVertex(mouse_x2, mouse_y2, true);
+                                }
+                                else
+                                {
+                                    click = false; contVertex = 0;
+                                    pushVertex(mouse_x2, mouse_y2, true);
+                                }
+                            }
+                            else
+                                onButtonClick(mouse_x2, mouse_y2);
+                        }
+                        else
+                        {
+                            mouse_x1 = x; mouse_y1 = height - y - 1;
+                            if (isMenuBar(mouse_y1))
+                            {
+                                click = true; contVertex++;
+                                pushShape(shapeMode, true);
+                                pushVertex(mouse_x1, mouse_y1, true);
+                            }
+                            else
+                                onButtonClick(mouse_x1, mouse_y1);
+                        }
+                    }
+                    break;
+
+                case FILLED_POLY: // ok
+                    if (state == GLUT_UP)
+                    {
+                        if (click)
+                        {
+                            mouse_x2 = x; mouse_y2 = height - y - 1;
+                            if (mouse_y2 <= height - 50)
+                            {
+                                if (contVertex > 3)
+                                {
+                                    if (mouse_x2 == mouse_x1 && mouse_y2 == mouse_y1)
+                                    {
+                                        click = false; contVertex = 0;
+                                    }
+                                    else
+                                    {
+                                        contVertex++;
+                                        pushVertex(mouse_x2, mouse_y2, true);
+                                    }
+                                }
+                                else
+                                {
+                                    contVertex++;
+                                    pushVertex(mouse_x2, mouse_y2, true);
+                                }
+                            }
+                            else
+                                onButtonClick(mouse_x2, mouse_y2);
+                        }
+                        else
+                        {
+                            mouse_x1 = x; mouse_y1 = height - y - 1;
+                            if (isMenuBar(mouse_y1))
+                            {
+                                click = true; contVertex++;
+                                pushShape(shapeMode, true);
+                                pushVertex(mouse_x1, mouse_y1, true);
+                            }
+                            else
+                                onButtonClick(mouse_x1, mouse_y1);
+                        }
+                    }
+                    break;
+
+                case TRANSLATION:
+                {
+                    if (isMenuBar(mouse_y1))
+                    {
+                        std::vector<double> v(2);
+                        std::cout << "Digite os valores de translacao (x y), ex: 1 2: ";
+
+                        if (!(std::cin >> v[0] >> v[1])) {
+                            std::cerr << "Erro ao ler os valores de translacao. Certifique-se de digitar dois numeros.\n";
+                        }
+
+                        pushTransformation(TRANSLATION, v);
+                        shapeMode = MOUSE;
+                    }
+                    else
+                    {
+                        onButtonClick(mouse_x1, mouse_y1);
+                    }
+                    break;
+                }
+                case SCALING:
+                {
+                    if (isMenuBar(mouse_y1))
+                    {
+                        std::vector<double> v(2);
+                        std::cout << "Digite os valores de escala (x y), ex: 1 2: ";
+
+                        if (!(std::cin >> v[0] >> v[1])) {
+                            std::cerr << "Erro ao ler os valores de translacao. Certifique-se de digitar dois numeros.\n";
+                        }
+
+                        pushTransformation(SCALING, v);
+                        shapeMode = MOUSE;
+                    }
+                    else
+                    {
+                        onButtonClick(mouse_x1, mouse_y1);
+                    }
+                    break;
+                }
+                break;
+
+                case SHEARING:
+                {
+                    if (isMenuBar(mouse_y1))
+                    {
+                        std::vector<char> d(2);
+
+                        std::cout << "Digite o eixo e o valor de cisalhamento (ex: \"x 5\"): ";
+                        std::cin >> d[0] >> d[1];
+
+                        std::vector<double> vetorD(2);
+                        vetorD[0] = static_cast<double>(d[0]);
+                        vetorD[1] = static_cast<double>(d[1]);
+
+                        pushTransformation(SHEARING, vetorD);
+                        shapeMode = MOUSE;
+                    }
+                    else
+                    {
+                        onButtonClick(mouse_x1, mouse_y1);
+                    }
+                }
+                break;
+
+                case REFLECTION:
+                {
+                    if (isMenuBar(mouse_y1))
+                    {
+                        char eixo;
+                        std::cout << "Digite o eixo de reflexao (\"x\", \"y\" ou \"0\"): ";
+                        std::cin >> eixo;
+
+                        if (eixo != 'x' && eixo != 'y' && eixo != '0') {
+                            std::cerr << "Erro: eixo invalido. Use 'x', 'y' ou '0'.\n";
+                            return;
+                        }
+
+                        std::vector<double> vetorD(2, 0.0);
+                        vetorD[0] = eixo;
+
+                        pushTransformation(REFLECTION, vetorD);
+                        shapeMode = MOUSE;
+                    }
+                    else
+                    {
+                        onButtonClick(mouse_x1, mouse_y1);
+                    }
+                }
+                break;
+
+                case ROTATION:
+                {
+                    if (isMenuBar(mouse_y1))
+                    {
+                        int grauRotacao;
+                        std::cout << "Digite o grau de rotacao: ";
+                        std::cin >> grauRotacao;
+
+                        if (std::cin.fail()) {
+                            std::cerr << "Erro: entrada invalida. Digite um número inteiro.\n";
+                            return;
+                        }
+
+                        double radianos = grauRotacao * M_PI / 180.0;
+
+                        std::vector<double> vetorD(2, 0.0);
+                        vetorD[0] = radianos;
+
+                        pushTransformation(ROTATION, vetorD);
+                        shapeMode = MOUSE;
+                    }
+                    else
+                    {
+                        onButtonClick(mouse_x1, mouse_y1);
+                    }
+                }
                 break;
             }
         break;
-
-            //        case GLUT_MIDDLE_BUTTON:
-            //            if (state == GLUT_DOWN) {
-            //                glutPostRedisplay();
-            //            }
-            //        break;
-            //
-            //        case GLUT_RIGHT_BUTTON:
-            //            if (state == GLUT_DOWN) {
-            //                glutPostRedisplay();
-            //            }
-            //        break;
-
     }
 }
 
-/*
- * Controle da posicao do cursor do mouse
- */
+/* Mouse cursor position control */
 void mousePassiveMotion(int x, int y) {
     m_x = x; m_y = height - y - 1;
     glutPostRedisplay();
 }
 
-/*
- * Funcao para desenhar apenas um pixel na tela
- */
-void drawPixel(int x, int y) {
-    glBegin(GL_POINTS); // Seleciona a primitiva GL_POINTS para desenhar
-        glVertex2i(x, y);
-    glEnd();  // indica o fim do ponto
+/* Controls the drawings on the screen */
+void display(void)  
+{
+    glMatrixMode(GL_MODELVIEW);     // Muda pro modo de desenho
+    glClear(GL_COLOR_BUFFER_BIT);   // Limpa o Buffer de Cores
+    glLoadIdentity();               // Carrega a matriz identidade
+    drawGUI();                      // Carrega a GUI
+    drawTexts();                    // Desenha texto com as coordenadas da posicao do mouse
+    drawShapes();                   // Desenha as formas geometricas da lista
+    glutSwapBuffers();              // Troca os buffers
 }
 
-/*
- * Funcao que desenha a lista de formas geometricas
- */
-void drawFormas() {
+/* Function to store a geometric shape in the list of shapes */
+static void pushShape(int type, bool front = true)
+{
+    shapes newShape{
+        newShape.type = type,
+        newShape.red = redColor,
+        newShape.green = greenColor,
+        newShape.blue = blueColor
+    };
 
-    // Apos o primeiro clique, desenha a reta com a posicao atual do mouse
-    if (click1) 
-        bresenham(x_1, y_1, m_x, m_y);
-
-    // Percorre a lista de formas geometricas para desenhar
-    for (forward_list<forma>::iterator f = formas.begin(); f != formas.end(); f++) {
-
-        switch (f->tipo) {
-            case LIN:
-                int i = 0, x[2], y[2];
-
-                // Percorre a lista de vertices da forma linha para desenhar
-                for (forward_list<vertice>::iterator v = f->v.begin(); v != f->v.end(); v++, i++) {
-                    x[i] = v->x;
-                    y[i] = v->y;
-                }
-
-                // Desenha o segmento de reta apos dois cliques
-                bresenham(x[0], y[0], x[1], y[1]);
-            break;
-            // case RET:
-            // break;
-        }
+    if (front) {
+        listShapes.push_front(newShape);
+    }
+    else
+    {
+        listShapes.reverse();
+        listShapes.push_front(newShape);
+        listShapes.reverse();
     }
 }
 
-/*
- * Funcao que implementa o Algoritmo de Rasterizacao da Reta Imediata
- */
-void retaImediata(double x1, double y1, double x2, double y2) {
+/* Function to store a vertex in the shape of the beginning of the list of geometric shapes */
+static void pushVertex(int x, int y, bool front = true) {
+    vertex newVertex{
+        newVertex.x = x,
+        newVertex.y = y
+    };
 
-    double m, b, yd, xd;
-    double xmin, xmax, ymin, ymax;
-
-    drawPixel((int)x1, (int)y1);
-    if (x2 - x1 != 0) { // Evita a divisao por zero
-        m = (y2 - y1) / (x2 - x1);
-        b = y1 - (m * x1);
-
-        if (m >= -1 && m <= 1) { // Verifica se o declive da reta tem tg de -1 a 1, se verdadeira calcula incrementando x
-            xmin = (x1 < x2) ? x1 : x2;
-            xmax = (x1 > x2) ? x1 : x2;
-
-            for (int x = (int)xmin + 1; x < xmax; x++) {
-                yd = (m * x) + b;
-                yd = floor(0.5 + yd);
-                drawPixel(x, (int)yd);
-            }
-        }
-        else { // Se tg menor que -1 ou maior que 1, calcula incrementado os valores de y
-            ymin = (y1 < y2) ? y1 : y2;
-            ymax = (y1 > y2) ? y1 : y2;
-
-            for (int y = (int)ymin + 1; y < ymax; y++) {
-                xd = (y - b) / m;
-                xd = floor(0.5 + xd);
-                drawPixel((int)xd, y);
-            }
-        }
-
-    }
-    else { // se x2-x1 == 0, reta perpendicular ao eixo x
-        ymin = (y1 < y2) ? y1 : y2;
-        ymax = (y1 > y2) ? y1 : y2;
-        for (int y = (int)ymin + 1; y < ymax; y++) {
-            drawPixel((int)x1, y);
-        }
-    }
-    drawPixel((int)x2, (int)y2);
-}
-
-/*
- * Function that implements the Bresenham Algorithm (considering only the first octant)
- * 
- * Note: The Bresenham algorithm, as presented, assumes that the slope of the straight line segments to be rasterized 
- * is included in the interval [0;1] and that the algorithm is applied for increasing values ??of the coordinatex away 
- * from one unit. This means that the Bresenham algorithm is only applicable to straight segments existing in the first octant.
- * For line segments that do not exist in the first octant, you must transform them to the first octant before applying the Bresenham 
- * algorithm and applying the inverse transformation to the pixels that the algorithm calculates. ( Prof. Lopes (Portugal) )
- * 
- * OBS: this only has the first octant
- */
-void bresenham(int x1, int y1, int x2, int y2) {
-
-    int deltaX = abs(x2 - x1); // Calculate the absolute difference between x2 and x1
-    int deltaY = abs(y2 - y1); // Calculate the absolute difference between y2 and y1
-
-    // Direction of the increment for x and y
-    int incE = 2 * deltaY;
-    int incNE = 2 * (deltaY - deltaX);
-
-    int d = 2 * deltaY - deltaX;
-
-    // Draw with GL_POINTS primitive
-    glBegin(GL_POINTS);
-
-    // Draw the current point
-    glVertex2i(x1, y1);
-
-    while (x1 < x2) {
-
-        if (d <= 0) {
-            d += incE;
-        }
-        else {
-            d += incNE;
-            y1++;
-        }
-        x1++;
-        glVertex2i(x1, y1);
-    }
-    glEnd();
-}
-
-
-/*
- * Function that implements the Bresenham Algorithm (considering all the octants)
- *
- * Note: The Bresenham algorithm, as presented, assumes that the slope of the straight line segments to be rasterized
- * is included in the interval [0;1] and that the algorithm is applied for increasing values ??of the coordinatex away
- * from one unit. This means that the Bresenham algorithm is only applicable to straight segments existing in the first octant.
- * For line segments that do not exist in the first octant, you must transform them to the first octant before applying the Bresenham
- * algorithm and applying the inverse transformation to the pixels that the algorithm calculates. ( Prof. Lopes (Portugal) )
- *
- * OBS: This one has all the octants
- */
-
-/*
-void bresenham(int x1, int y1, int x2, int y2) {
-
-    int deltaX = abs(x2 - x1);
-    int deltaY = abs(y2 - y1);
-
-    int signalX = (x1 < x2) ? 1 : -1;
-    int signalY = (y1 < y2) ? 1 : -1;
-
-    int incE, incNE, d;
-
-    glBegin(GL_POINTS);
-
-    glVertex2i(x1, y1);
-
-    if (deltaX > deltaY) {
-
-        d = 2 * deltaY - deltaX;
-        incE = 2 * deltaY;
-        incNE = 2 * (deltaY - deltaX);
-
-        while (x1 != x2) {
-
-            if (d <= 0) {
-                d += incE;
-                x1 += signalX;
-            }
-            else {
-                d += incNE;
-                x1 += signalX;
-                y1 += signalY;
-            }
-            glVertex2i(x1, y1);
-        }
+    if (front) {
+        listShapes.front().vertexs.push_front(newVertex);
     }
     else {
-
-        d = 2 * deltaX - deltaY;
-        incE = 2 * deltaX;
-        incNE = 2 * (deltaX - deltaY);
-
-        while (y1 != y2) {
-
-            if (d <= 0) {
-                d += incE;
-                y1 += signalY;
-            }
-            else {
-                d += incNE;
-                x1 += signalX;
-                y1 += signalY;
-            }
-            glVertex2i(x1, y1);
-        }
+        listShapes.reverse();
+        listShapes.front().vertexs.push_front(newVertex);
+        listShapes.reverse();
     }
-    glEnd();
 }
-*/
+
+/* Function to store a transformation in each form in the list */
+static void pushTransformation(int type, const std::vector<double>& values)
+{
+    transformation newTransformation{
+        newTransformation.type = type
+    };
+
+    for (int i = 0; i < 2; i++)
+    {
+        newTransformation.vertexF[i] = values[i];
+    }
+
+    // Adds the transformation to all shapes drawn up to that point
+    for (forward_list<shapes>::iterator it = listShapes.begin(); it != listShapes.end(); ++it)
+    {
+        it -> transformations.push_front(newTransformation);
+    }
+}
