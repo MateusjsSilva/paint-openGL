@@ -10,11 +10,7 @@
 #ifndef transformations_h
 	#define transformations_h
 	
-    /*
-    * Function: applyTranslation
-    * ---------------------------
-    * Applies translation transformation to a given vertex.
-    */
+    /* Applies translation transformation to a given vertex */
     void applyTranslation(double* x, double* y, double Tx, double Ty)
     {
         // Translation matrix
@@ -22,16 +18,11 @@
                             0 , 1 , 0,
                             Tx, Ty, 1 };
 
-        // Apply transformation
         *x += matrix[6];
         *y += matrix[7];
     }
 
-    /*
-     * Function: applyScaling
-     * -----------------------
-     * Applies scaling transformation to a given vertex.
-     */
+    /* Applies scaling transformation to a given vertex */
     void applyScaling(double* x, double* y, double Sx, double Sy)
     {
         // Scaling matrix
@@ -39,15 +30,11 @@
                             0 , Sy, 0,
                             0 , 0 , 1 };
 
-        *x *= matrix[0];
-        *y *= matrix[4];
+        *x = (*x * matrix[0]);
+        *y = (*y * matrix[0]);
     }
 
-    /*
-     * Function: applyShearing
-     * ------------------------
-     * Applies shearing transformation to a given vertex along the specified axis.
-     */
+    /* Applies shearing transformation to a given vertex along the specified axis */
     void applyShearing(double* x, double* y, double axis, double value)
     {
         switch ((char)axis)
@@ -61,7 +48,7 @@
                                     c, 1, 0,
                                     0, 0, 1 };
 
-                *x += (*y * matrix[3]);
+                *x = *x + (*y * matrix[3]);
                 *y = *y;
             }
             break;
@@ -76,17 +63,13 @@
                                     0, 0, 1 };
 
                 *x = *x;
-                *y += (*x * matrix[1]);
+                *y = *y + (*x * matrix[1]);
             }
             break;
         }
     }
 
-    /*
-     * Function: applyReflection
-     * --------------------------
-     * Applies reflection transformation to a given vertex along the specified axis.
-     */
+    /* Applies reflection transformation to a given vertex along the specified axis */
     void applyReflection(double* x, double* y, double axis)
     {
         switch ((char)axis)
@@ -129,11 +112,7 @@
         }
     }
 
-    /*
-     * Function: applyRotation
-     * ------------------------
-     * Applies rotation transformation to a given vertex by the specified angle.
-     */
+    /* Applies rotation transformation to a given vertex by the specified angle */
     void applyRotation(double* x, double* y, double theta)
     {
         // Rotation matrix
@@ -148,26 +127,22 @@
         *y = tempY;
     }
 
-    /*
-     * Function: applyTransformation
-     * ------------------------------
-     * Applies the specified transformation to a vertex based on the transformation type.
-     */
+    /* Applies the specified transformation to a vertex based on the transformation type */
     void applyTransformation(double* x, double* y, int centerX, int centerY, forward_list<transformation>::iterator tr)
     {
-        switch (tr->type)
+        switch (tr -> type)
         {
             case TRANSLATION:
                 applyTranslation(x, y, tr-> vertexF[0], tr-> vertexF[1]);
-                break;
+            break;
 
             case SCALING:
                 applyScaling(x, y, tr-> vertexF[0], tr-> vertexF[1]);
-                break;
+            break;
 
             case SHEARING:
                 applyShearing(x, y, tr-> vertexF[0], tr-> vertexF[1]);
-                break;
+            break;
 
             case REFLECTION:
                 applyReflection(x, y, tr-> vertexF[0]);
@@ -175,23 +150,23 @@
                 {
                     case 'x':
                         applyTranslation(x, y, 0, 2 * centerY);
-                        break;
+                    break;
 
                     case 'y':
                         applyTranslation(x, y, 2 * centerX, 0);
-                        break;
+                    break;
 
                     case '0':
                         applyTranslation(x, y, 2 * centerX, 2 * centerY);
-                        break;
+                     break;
                 }
-                break;
+            break;
 
             case ROTATION:
                 applyTranslation(x, y, -centerX, -centerY);
                 applyRotation(x, y, tr -> vertexF[0]);
                 applyTranslation(x, y, centerX, centerY);
-                break;
+            break;
         }
     }
 

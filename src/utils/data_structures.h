@@ -10,16 +10,19 @@
 #ifndef data_structures_h
 	#define data_structures_h
 
+    // Structure to represent a vertex (a point in 2D space)
     struct vertex
     {
         int x, y;
     };
 
+    // Structure to represent a geometric transformation
     struct transformation
     {
         int type; double vertexF[2];
     };
 
+    // Structure to represent a geometric shape
     struct shapes
     {
         int type{};
@@ -28,8 +31,8 @@
         forward_list<transformation> transformations;
     };
 
-    // Types of geometric shapes
-    enum shape_type
+    // menu options
+    enum menu_options
     {
         MOUSE = 1,      // Mouse (Placeholder)
         LINE,           // Line
@@ -40,13 +43,8 @@
         PAINT_BUCKET,   // Paint Bucket (Flood Fill)
         FILLED_RECT,    // Filled Rectangle
         FILLED_TRI,     // Filled Triangle
-        FILLED_POLY     // Filled Polygon
-    };
-
-    // Types of geometric transformations
-    enum transformation_types
-    {
-        TRANSLATION = 11,   // Translation
+        FILLED_POLY,     // Filled Polygon
+        TRANSLATION,   // Translation
         SCALING,            // Scaling
         SHEARING,           // Shearing
         REFLECTION,         // Reflection

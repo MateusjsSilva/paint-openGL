@@ -10,9 +10,7 @@
 #ifndef algorithms_h
 	#define algorithms_h
 
-    /*
-    * Function to draw a single pixel on the screen
-    */
+    /* Function to draw a single pixel on the screen */
     void drawPixel(int x, int y)
     {
         glBegin(GL_POINTS);

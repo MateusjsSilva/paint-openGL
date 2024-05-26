@@ -6,170 +6,156 @@
  */
 
 #pragma once
+#include <iostream>
 
 #ifndef shapes_h
     #define shapes_h
 
-    /*
-     * Funcao responsavel por desenhar uma linha no editor grafico
-     */
-    void desenhaLinha(std::vector<double> x, std::vector<double> y)
+    /* Function responsible for drawing a line */
+    void drawLine(const std::vector<double>& x, const std::vector<double>& y)
     {
         forward_list<vertex> vertices = bresenhamLine(x[0], y[0], x[1], y[1]);
-        for (forward_list<vertex>::iterator v = vertices.begin(); v != vertices.end(); v++)
+        for (auto it = vertices.begin(); it != vertices.end(); ++it)
         {
-            double desenhoX = v->x;
-            double desenhoY = v->y;
-            drawPixel(desenhoX, desenhoY);
+            double drawX = it->x;
+            double drawY = it->y;
+            drawPixel(drawX, drawY);
         }
     }
 
-
-    /*
-     * Funcao responsavel por desenhar um retangulo no editor grafico
-     */
-    void desenhaRetangulo(double* x, double* y)
+    /* Function responsible for drawing a rectangle */
+    void drawRectangle(double* x, double* y)
     {
-        forward_list<vertex> vertices;
         for (int k = 0; k < 4; k++)
         {
+            forward_list<vertex> vertexs;
             if (k != 3)
             {
-                vertices = bresenhamLine(x[k], y[k], x[k + 1], y[k + 1]);
+                vertexs = bresenhamLine(x[k], y[k], x[k + 1], y[k + 1]);
             }
             else
             {
-                vertices = bresenhamLine(x[k], y[k], x[0], y[0]);
+                vertexs = bresenhamLine(x[k], y[k], x[0], y[0]);
             }
 
-            for (forward_list<vertex>::iterator v = vertices.begin(); v != vertices.end(); v++)
+            for (auto it = vertexs.begin(); it != vertexs.end(); ++it)
             {
-                double desenhoX = v->x;
-                double desenhoY = v->y;
-                drawPixel(desenhoX, desenhoY);
+                double drawX = it->x;
+                double drawY = it->y;
+                drawPixel(drawX, drawY);
             }
         }
     }
 
-
-    /*
-     * Funcao responsavel por desenhar um triangulo no editor grafico
-     */
-    void desenhaTriangulo(double* x, double* y)
+    /* Function responsible for drawing a triangle */
+    void drawTriangle(double* x, double* y)
     {
-        forward_list<vertex> vertices;
         for (int j = 0; j < 3; j++)
         {
+            forward_list<vertex> vertexs;
             if (j != 2)
             {
-                vertices = bresenhamLine(x[j], y[j], x[j + 1], y[j + 1]);
+                vertexs = bresenhamLine(x[j], y[j], x[j + 1], y[j + 1]);
             }
             else
             {
-                vertices = bresenhamLine(x[j], y[j], x[0], y[0]);
+                vertexs = bresenhamLine(x[j], y[j], x[0], y[0]);
             }
 
-            for (forward_list<vertex>::iterator v = vertices.begin(); v != vertices.end(); v++)
+            for (auto it = vertexs.begin(); it != vertexs.end(); ++it)
             {
-                double desenhoX = v->x;
-                double desenhoY = v->y;
-                drawPixel(desenhoX, desenhoY);
+                double drawX = it->x;
+                double drawY = it->y;
+                drawPixel(drawX, drawY);
             }
         }
     }
 
-
-    /*
-     * Funcao responsavel por desenhar um poligono no editor grafico
-     * O modo se encerra quando o poligono possui no minimo quatro vertices,
-     * e o usuario clica no vertice inicial
-     */
-    void desenhaPoligono(std::vector<double> x, std::vector<double> y, int numVertices)
+    /* Function responsible for drawing a polygon */
+    void drawPolygon(const std::vector<double>& x, const std::vector<double>& y)
     {
-        forward_list<vertex> vertices;
-        for (int j = 0; j < numVertices - 1; j++)
+        int numVertexs = x.size();
+        forward_list<vertex> vertexs;
+        for (int j = 0; j < numVertexs - 1; j++)
         {
-            vertices = bresenhamLine(x[j], y[j], x[j + 1], y[j + 1]);
+            vertexs = bresenhamLine(x[j], y[j], x[j + 1], y[j + 1]);
 
-            for (forward_list<vertex>::iterator v = vertices.begin(); v != vertices.end(); v++)
+            for (const auto& v : vertexs)
             {
-                double desenhoX = v->x;
-                double desenhoY = v->y;
-                drawPixel(desenhoX, desenhoY);
+                double vertexX = v.x;
+                double vertexY = v.y;
+                drawPixel(vertexX, vertexY);
             }
         }
     }
 
-
-    /*
-     * Funcao responsavel por desenhar uma circunferencia no editor grafico
-     */
-    void desenhaCircunferencia(double* x, double* y)
+    /* Function responsible for drawing a circle */
+    void drawCircle(double* x, double* y)
     {
-        forward_list<vertex> vertices = bresenhamCircle(x[1], y[1], x[0], y[0]);
-        for (forward_list<vertex>::iterator v = vertices.begin(); v != vertices.end(); v++)
+        // Generate the vertexs of the circle using Bresenham's circle algorithm
+        forward_list<vertex> vertexs = bresenhamCircle(x[1], y[1], x[0], y[0]);
+
+        // Iterate through the list of vertices and draw each pixel
+        for (auto v = vertexs.begin(); v != vertexs.end(); ++v)
         {
-            double desenhoX = v->x;
-            double desenhoY = v->y;
-            drawPixel(desenhoX, desenhoY);
+            double drawX = v->x;
+            double drawY = v->y;
+            drawPixel(drawX, drawY);
         }
     }
 
-
-    /*
-     * Funcao responsavel por colorir o interior de uma forma
-     */
-    void desenhaBalde(double x, double y, float* corAntiga, float* corNova)
+    /* Function responsible for filling a shape with a new color */
+    void fillShape(double x, double y, float* oldColor, float* newColor)
     {
-        forward_list<vertex> vertices;
-        algoritmoFloodFill(x, y, corAntiga, corNova, &vertices);
+        // List to store vertexs affected by the flood fill algorithm
+        forward_list<vertex> affectedVertexs;
+
+        // Apply flood fill algorithm to fill the shape with the new color
+        floodFillAlgorithm(x, y, oldColor, newColor, &affectedVertexs);
     }
 
-
-
-    /*
-     * Funcao responsavel por desenhar um retangulo preenchido no editor grafico
-     */
-    void desenhaRetanguloPreenchido(std::vector<double> x, std::vector<double> y)
+    /* Function responsible for drawing a filled rectangle */
+    void drawFilledRectangle(std::vector<double> x, std::vector<double> y)
     {
-        forward_list<vertex> vertices = preenchePoligono(x, y, 4);
-        for (forward_list<vertex>::iterator v = vertices.begin(); v != vertices.end(); v++)
+        // Generate the vertexs of the filled rectangle using the fillPolygon algorithm
+        forward_list<vertex> vertexs = fillPolygon(x, y);
+
+        // Iterate through the list of vertexs and draw each pixel
+        for (auto v = vertexs.begin(); v != vertexs.end(); ++v)
         {
-            double desenhoX = v->x;
-            double desenhoY = v->y;
-            drawPixel(desenhoX, desenhoY);
+            double drawX = v->x;
+            double drawY = v->y;
+            drawPixel(drawX, drawY);
         }
     }
 
-
-    /*
-     * Funcao responsavel por desenhar um triangulo preenchido no editor grafico
-     */
-    void desenhaTrianguloPreenchido(std::vector<double> x, std::vector<double> y)
+    /* Function responsible for drawing a filled triangle */
+    void drawFilledTriangle(std::vector<double> x, std::vector<double> y)
     {
-        forward_list<vertex> vertices = preenchePoligono(x, y, 3);
-        for (forward_list<vertex>::iterator v = vertices.begin(); v != vertices.end(); v++)
+        // Generate the vertexs of the filled triangle using the fillPolygon algorithm
+        forward_list<vertex> vertexs = fillPolygon(x, y);
+
+        // Iterate through the list of vertexs and draw each pixel
+        for (auto v = vertexs.begin(); v != vertexs.end(); ++v)
         {
-            double desenhoX = v->x;
-            double desenhoY = v->y;
-            drawPixel(desenhoX, desenhoY);
+            double drawX = v->x;
+            double drawY = v->y;
+            drawPixel(drawX, drawY);
         }
     }
 
-
-    /*
-     * Funcao responsavel por desenhar um poligono preenchido no editor grafico
-     * O modo se encerra quando o poligono possui no minimo quatro vertices,
-     * e o usuario clica no vertice inicial
-     */
-    void desenhaPoligonoPreenchido(std::vector<double> x, std::vector<double> y, int numVertices)
+    /* Function responsible for drawing a filled polygon */
+    void drawFilledPolygon(std::vector<double> x, std::vector<double> y)
     {
-        forward_list<vertex> vertices = preenchePoligono(x, y, numVertices);
-        for (forward_list<vertex>::iterator v = vertices.begin(); v != vertices.end(); v++)
+        // Generate the vertices of the filled polygon using the fillPolygon algorithm
+        forward_list<vertex> vertexs = fillPolygon(x, y);
+
+        // Iterate through the list of vertices and draw each pixel
+        for (auto v = vertexs.begin(); v != vertexs.end(); ++v)
         {
-            double desenhoX = v->x;
-            double desenhoY = v->y;
-            drawPixel(desenhoX, desenhoY);
+            double drawX = v->x;
+            double drawY = v->y;
+            drawPixel(drawX, drawY);
         }
     }
 

@@ -10,25 +10,25 @@
 #ifndef global_variables_h
 	#define global_variables_h
 
-	// Verifica se foi realizado o primeiro clique do mouse
-	bool click1 = false;
+	// Checks whether the first mouse click was made
+	bool click = false;
 
-	// Largura e altura da janela
+	// Window width and height
 	int width = 600, height = 600;
 
-	// Indica o tipo de forma geometrica ativa para desenhar
-	int shapeMode = 1, transformationMode = 0;
+	// Indicates the type of active geometric shape to draw
+	int shapeMode = 2;
 
-	// Contador de vertices
-	int contCoordenadas = 0;
+	// Vertex counter
+	int contVertex = 0;
 
-	// Coordenadas da posicao atual do mouse
+	// Coordinates of the current mouse position
 	int m_x, m_y;
 
-	// Coordenadas do primeiro clique e do segundo clique do mouse
-	int mouseClick_x1, mouseClick_y1, mouseClick_x2, mouseClick_y2;
+	// Coordinates of the first mouse click and second mouse click
+	int mouse_x1, mouse_y1, mouse_x2, mouse_y2;
 
-	// Cor selecionada pro desenho
+	// Color selected for the design
 	float redColor = 0, greenColor = 0, blueColor = 0;
 
 	// Linked list of geometric shapes

@@ -10,51 +10,48 @@
 #ifndef flood_fill_h
 	#define flood_fill_h
 
-    /*
-    * Funcao que implementa o Algoritmo Flood Fill para preenchimento de poligonos
-    */
-    void algoritmoFloodFill(int x1, int y1, float* corAntiga, float* corNova, forward_list<vertex>* vertices)
+    /* Function that implements the Flood Fill Algorithm to fill polygons */
+    void floodFillAlgorithm(int x1, int y1, float* oldColor, float* newColor, forward_list<vertex>* vertexs)
     {
-        // Verifica se este pixel ja foi analisado pelo algoritmo
-        bool jaAnalisado = false;
-        for (forward_list<vertex>::iterator it_v = vertices->begin(); it_v != vertices->end(); it_v++)
+        // Check if this pixel has already been processed by the algorithm
+        bool alreadyProcessed = false;
+        for (auto it_v = vertexs -> begin(); it_v != vertexs -> end(); it_v++)
         {
             if (it_v->x == x1 && it_v->y == y1)
             {
-                jaAnalisado = true;
+                alreadyProcessed = true;
                 break;
             }
         }
 
-        // Se nao tenha sido, faz a verificacao
-        if (jaAnalisado == false)
+        // If not, proceed with the check
+        if (!alreadyProcessed)
         {
-            // Guarda a cor do pixel analisado
-            float corPixelAtual[3];
-            glReadPixels(x1, y1, 1, 1, GL_RGB, GL_FLOAT, corPixelAtual);
+            // Get the color of the current pixel
+            float currentPixelColor[3];
+            glReadPixels(x1, y1, 1, 1, GL_RGB, GL_FLOAT, currentPixelColor);
 
-            // Caso o pixel seja da cor antiga
-            if (corPixelAtual[0] == corAntiga[0] &&
-                corPixelAtual[1] == corAntiga[1] &&
-                corPixelAtual[2] == corAntiga[2])
+            // If the pixel is of the old color
+            if (currentPixelColor[0] == oldColor[0] &&
+                currentPixelColor[1] == oldColor[1] &&
+                currentPixelColor[2] == oldColor[2])
             {
-                // Pinta o pixel com a nova cor
-                glColor3f(corNova[0], corNova[1], corNova[2]);
+                // Paint the pixel with the new color
+                glColor3f(newColor[0], newColor[1], newColor[2]);
                 drawPixel(x1, y1);
 
+                // Save the vertex in the list of processed vertices
+                vertex v{
+                    v.x = x1,
+                    v.y = y1
+                };
+                vertexs -> push_front(v);
 
-                // Salva o vertice na lista de vertices ja analisados
-                vertex v;
-                v.x = x1;
-                v.y = y1;
-                vertices->push_front(v);
-
-
-                // Chamadas recursivas pros seus vizinhos cardeais (FloodFill com vizinhanca 4)
-                algoritmoFloodFill(x1 + 1, y1, corAntiga, corNova, vertices);
-                algoritmoFloodFill(x1, y1 + 1, corAntiga, corNova, vertices);
-                algoritmoFloodFill(x1 - 1, y1, corAntiga, corNova, vertices);
-                algoritmoFloodFill(x1, y1 - 1, corAntiga, corNova, vertices);
+                // Recursively call the function for its cardinal neighbors (4-neighborhood FloodFill)
+                floodFillAlgorithm(x1 + 1, y1, oldColor, newColor, vertexs);
+                floodFillAlgorithm(x1, y1 + 1, oldColor, newColor, vertexs);
+                floodFillAlgorithm(x1 - 1, y1, oldColor, newColor, vertexs);
+                floodFillAlgorithm(x1, y1 - 1, oldColor, newColor, vertexs);
             }
         }
     }

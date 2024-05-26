@@ -10,9 +10,7 @@
 #ifndef bresenham_h
     #define bresenham_h
 
-    /*
-    * Function that implements the Bresenham Algorithm for rasterization of line segments
-    */
+    /* Function that implements the Bresenham Algorithm for rasterization of line segments */
     std::forward_list<vertex> bresenhamLine(double x1, double y1, double x2, double y2)
     {
         // List of vertices to be drawn
@@ -85,27 +83,21 @@
         int incNE = 2 * (deltaY - deltaX);
 
         // Bresenham Algorithm
-        int bresenhamX, bresenhamY;
-        int Yi = yStart;
+        int bresenhamX, bresenhamY, Yi = yStart;
 
         for (int Xi = xStart; Xi <= xEnd; Xi++)
         {
-            // First point
-            if (Xi == xStart)
+            if (Xi == xStart)           // First point
             {
                 bresenhamX = xStart;
                 bresenhamY = yStart;
             }
-
-            // Last point
-            else if (Xi == xEnd)
+            else if (Xi == xEnd)        // Last point
             {
                 bresenhamX = xEnd;
                 bresenhamY = yEnd;
             }
-
-            // Remaining
-            else
+            else                        // Remaining
             {
                 bresenhamX = Xi;
 
@@ -118,7 +110,6 @@
                     d += incNE;    // Move to the Northeast
                     Yi += 1;
                 }
-
                 bresenhamY = Yi;
             }
 
@@ -135,12 +126,9 @@
         return vertexList;
     }
 
-    /*
-     * Function that implements the Bresenham Algorithm for rasterization of circles
-    */
+    /* Function that implements the Bresenham Algorithm for rasterization of circles */
     forward_list<vertex> bresenhamCircle(double x1, double y1, double x2, double y2)
     {
-        // List of vertices to be drawn
         forward_list<vertex> vertexList;
 
         // Original coordinates
@@ -166,8 +154,6 @@
                 bresenhamX = Xi;
                 bresenhamY = Yi;
             }
-
-            // Remaining
             else
             {
                 bresenhamX = Xi;
@@ -185,13 +171,9 @@
                     incSE += 4;
                     Yi--;
                 }
-
                 bresenhamY = Yi;
             }
 
-            // Draw the points (Translation + Octant Symmetry)
-
-            // Coordinate to be rasterized is (0, R)
             vertex v;
             if (Xi == 0)
             {
